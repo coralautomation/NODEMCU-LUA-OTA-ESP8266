@@ -63,14 +63,15 @@ function dofile(filename)
     return f()
 end
 
-
+local mytimer = tmr.create()
 if (s.host~="") then
 --if (s.host and s.domain and s.path) then
     if (tonumber(s.update)>0) then
-        tmr.create():alarm (tonumber(s.update)*60000, tmr.ALARM_SINGLE, function()
+        mytimer:register(tonumber(s.update)*60000, tmr.ALARM_AUTO, function()
                 print("checking for update")
                 update()
             end)
+        mytimer.start()
     end
     if (s.boot~="") then
         local success, err = pcall(dofile, s.boot)
