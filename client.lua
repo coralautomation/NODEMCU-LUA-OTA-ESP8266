@@ -31,29 +31,31 @@ end
 
 function dwn()
     -- body
+    print "In download"
     n = n + 1
     v = data[n]
     if v == nil then
         --dofile(data[1]..".lc")
         bootfile= string.gsub(data[1], '\.lua$','') --string.gsub(s, '\....$','')
-        s.boot = bootfile..".lc"
+        s.boot = bootfile..".lua"
         SaveX("No error")
         Reboot("File loaded Reboot...")
     else
-        print("Filename: "..v)
+        print("Filename in dwn: "..v)
         filename=v
-
+        print "before remove"
             file.remove(v);
             file.open(v, "w+")
-
+print "after opne"
             payloadFound = false
             conn=net.createConnection(net.TCP, 0)
             conn:on("receive", function(conn, payload)
-
+                print "On recieve"
                 if (payloadFound == true) then
                     file.write(payload)
                     file.flush()
                 else
+                print "in else"
                     if (string.find(payload,"\r\n\r\n") ~= nil) then
                         file.write(string.sub(payload,string.find(payload,"\r\n\r\n") + 4))
                         file.flush()
@@ -69,7 +71,8 @@ function dwn()
                 file.close()
                 ext = string.sub(v, -3)
                 if (ext == "lua") then
-                    node.compile(filename)
+                    --node.compile(filename)
+                  print "lua file kept"
                 end
                 dwn()
 
@@ -139,7 +142,8 @@ function FileList(sck,c)
                 file.close()
                 ext = string.sub(v, -3)
                 if (ext == "lua") then
-                    node.compile(v)
+                    --node.compile(v)
+                    print "lua file kept"
                 end
                 dwn()
             end)
@@ -179,7 +183,10 @@ wifi.sta.config(station_cfg)
 wifi.sta.autoconnect (1)
 
 iFail = 20 -- trying to connect to AP in 20sec, if not then reboot
-tmr.alarm (1, 1000, 1, function ( )
+
+local mytimer = tmr.create()
+
+mytimer:register (1000, tmr.ALARM_AUTO ,function ( )
   iFail = iFail -1
   print(iFail)
   if (iFail == 0) then
@@ -193,7 +200,7 @@ tmr.alarm (1, 1000, 1, function ( )
     print(s.ssid..": "..iFail)
   else
     print ("ip: " .. wifi.sta.getip ( ))
-    tmr.stop (1)
+    mytimer:stop ()
     -- get list of files
     sk=net.createConnection(net.TCP, 0)
     cmd = "GET /".. s.path .."/node.php?id="..id.."&list"..
@@ -204,17 +211,20 @@ tmr.alarm (1, 1000, 1, function ( )
         "\r\n\r\n"
     print("Request_HTTP:"..cmd)
     sk:on("connection",function(conn, payload)
+                print("connection")
                 sk:send(cmd)
             end)
     sk:on("receive", FileList)
 
     --sGet = "GET /".. s.path .. " HTTP/1.1\r\nHost: " .. s.domain .. "\r\nConnection: keep-alive\r\nAccept: */*\r\n\r\n"
-    sk:connect(80,s.host)
+    sk:connect(80,s.domain)
 
   end
   collectgarbage()
 
 end)
+  mytimer:start(true)
+
 
 
 
